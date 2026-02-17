@@ -1,0 +1,14 @@
+{
+  "duration": 2.409230457693052,
+  "credit_amount": 0.9360801526194759,
+  "installment_rate": 2.304730032735922,
+  "residence_since": 0.5381507778365923,
+  "age": -1.1625841264319416,
+  "existing_credits": 0.8534417520898012,
+  "liable_people": 0.2071607339932207,
+  "checking_account_good": -1.518393608397943,
+  "credit_history_good": -0.6785992205382876,
+  "savings_good": -0.8865221851537116,
+  "employment_stable": -0.40863190360151824,
+  "bias": -1.0840557754806692
+}

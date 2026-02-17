@@ -1,0 +1,14 @@
+node_modules/
+.env
+uploads/
+backups/
+*.log
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+npm-debug.log
+yarn-error.log
+

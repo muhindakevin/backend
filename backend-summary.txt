@@ -1,0 +1,761 @@
+================================================================================
+UMURENGE WALLET - BACKEND API SUMMARY
+Frontend to Backend Feature Mapping
+================================================================================
+
+This document maps every frontend page, component, and feature to its corresponding
+backend API endpoint, database model, and notification triggers.
+
+================================================================================
+AUTHENTICATION & AUTHORIZATION
+================================================================================
+
+Frontend Component: Login.jsx, LandingPage.jsx
+Backend Routes:
+  POST /api/auth/send-otp
+    - Sends 6-digit OTP to phone via Twilio SMS
+    - Creates user if doesn't exist
+    - Stores OTP and expiry in User model
+    - Notification: SMS sent via Twilio
+
+  POST /api/auth/verify-otp
+    - Validates OTP
+    - Generates JWT token
+    - Updates lastLogin
+    - Notification: Welcome SMS + Email (if first login)
+
+  POST /api/auth/demo-login
+    - Demo login for frontend demo users
+    - Returns JWT token and user data
+
+  GET /api/auth/me
+    - Returns current authenticated user
+    - Requires: JWT token in Authorization header
+
+Database Models: User
+Notification Triggers: OTP SMS, Registration confirmation
+
+================================================================================
+MEMBER FEATURES
+================================================================================
+
+1. Member Dashboard (/member)
+   Frontend: MemberDashboard.jsx
+   Backend: GET /api/members/dashboard
+   Returns: Total savings, active loans, credit score, recent transactions
+   Models: User, Loan, Transaction
+
+2. My Savings (/member/savings)
+   Frontend: MemberSavings.jsx
+   Backend: GET /api/members/dashboard (includes savings data)
+   Models: User (totalSavings field), Contribution, Transaction
+
+3. My Loans (/member/loans)
+   Frontend: MemberLoans.jsx
+   Backend:
+     - GET /api/loans/member (get all member loans)
+     - POST /api/loans/request (request new loan)
+     - POST /api/loans/:id/pay (make payment)
+   Models: Loan, Transaction
+   Notification Triggers:
+     - Loan request: None (pending status)
+     - Loan approval: SMS + Email
+     - Loan rejection: SMS + Email
+     - Payment: Transaction logged
+
+4. Transactions (/member/transactions)
+   Frontend: MemberTransactions.jsx
+   Backend:
+     - GET /api/transactions (filtered by userId)
+     - GET /api/transactions/summary
+   Models: Transaction
+
+5. Fines & Penalties (/member/fines)
+   Frontend: MemberFines.jsx
+   Backend:
+     - GET /api/fines/member (get member fines)
+     - PUT /api/fines/:id/pay (pay fine)
+   Models: Fine, Transaction
+   Notification Triggers:
+     - Fine issued: SMS notification
+     - Fine paid: Transaction logged
+
+6. Learn & Grow (/member/learn-grow)
+   Frontend: MemberLearnGrow.jsx
+   Backend:
+     - GET /api/learn-grow (published content)
+     - GET /api/learn-grow/:id (increment views)
+   Models: LearnGrowContent
+   Notification Triggers:
+     - New content published: Email notification
+
+7. Group Voting (/member/voting)
+   Frontend: MemberVoting.jsx
+   Backend:
+     - GET /api/voting (get group votes)
+     - POST /api/voting/:id/vote (cast vote)
+   Models: Vote, VoteOption, VoteResponse
+
+8. My Group (/member/group)
+   Frontend: MemberGroup.jsx
+   Backend:
+     - GET /api/groups/:id (group details)
+     - GET /api/groups/:id/stats (group statistics)
+   Models: Group, User (members)
+
+9. Support (/member/support)
+   Frontend: MemberSupport.jsx
+   Backend:
+     - POST /api/support/tickets (create ticket)
+     - GET /api/support/tickets (user tickets)
+   Models: SupportTicket
+
+10. Settings (/member/settings)
+    Frontend: MemberSettings.jsx
+    Backend:
+      - PUT /api/members/profile (update profile)
+      - GET /api/auth/me (get current user)
+    Models: User
+
+================================================================================
+GROUP ADMIN FEATURES
+================================================================================
+
+1. Dashboard (/admin)
+   Frontend: GroupAdminDashboard.jsx
+   Backend: GET /api/groups/:id/stats
+   Returns: Total members, active loans, pending approvals, group savings
+
+2. Members (/admin/members)
+   Frontend: GroupAdminMembers.jsx
+   Backend:
+     - GET /api/groups/:id (includes members)
+     - PUT /api/members/:id/suspend
+     - PUT /api/members/:id/activate
+   Models: User, Group
+
+3. Loan Requests (/admin/loan-requests)
+   Frontend: GroupAdminLoanRequests.jsx
+   Backend:
+     - GET /api/loans/requests (get all loan requests)
+     - GET /api/loans/:id (get loan details)
+     - PUT /api/loans/:id/approve
+     - PUT /api/loans/:id/reject
+   Models: Loan, User
+   Notification Triggers:
+     - Approve: SMS + Email to member
+     - Reject: SMS + Email to member
+
+4. Contributions (/admin/contributions)
+   Frontend: GroupAdminContributions.jsx
+   Backend:
+     - GET /api/contributions (group contributions)
+     - PUT /api/contributions/:id/approve
+     - PUT /api/contributions/:id/reject
+   Models: Contribution, Transaction
+   Notification Triggers:
+     - Approve: SMS + Email confirmation
+
+5. Fines & Penalties (/admin/fines)
+   Frontend: GroupAdminFines.jsx
+   Backend:
+     - GET /api/fines (group fines)
+     - POST /api/fines (issue fine)
+     - PUT /api/fines/:id/approve
+     - PUT /api/fines/:id/waive
+   Models: Fine
+   Notification Triggers:
+     - Issue fine: SMS to member
+
+6. Meetings (/admin/meetings)
+   Frontend: GroupAdminMeetings.jsx
+   Backend:
+     - GET /api/meetings (group meetings)
+     - POST /api/meetings (schedule meeting)
+     - PUT /api/meetings/:id (update meeting)
+   Models: Meeting
+   Notification Triggers:
+     - Schedule meeting: SMS reminder to all members
+
+7. Group Voting (/admin/voting)
+   Frontend: GroupAdminVoting.jsx
+   Backend:
+     - GET /api/voting (group votes)
+     - POST /api/voting (create vote)
+     - PUT /api/voting/:id/close
+   Models: Vote, VoteOption
+
+8. Announcements (/admin/announcements)
+   Frontend: GroupAdminAnnouncements.jsx
+   Backend:
+     - GET /api/announcements (group announcements)
+     - POST /api/announcements (create announcement)
+     - PUT /api/announcements/:id/send
+   Models: Announcement
+   Notification Triggers:
+     - Send announcement: SMS/Email to all members
+
+9. Applications (/admin/applications)
+   Frontend: GroupAdminMemberApplications.jsx
+   Backend:
+     - GET /api/applications (member applications)
+     - PUT /api/applications/:id/approve
+     - PUT /api/applications/:id/reject
+   Models: MemberApplication
+   Notification Triggers:
+     - Approve: SMS + Email welcome
+
+10. Analytics (/admin/analytics)
+    Frontend: GroupAdminAnalytics.jsx
+    Backend: GET /api/analytics
+    Returns: Savings, loans, members, contributions statistics
+
+11. Transactions (/admin/transactions)
+    Frontend: GroupAdminTransactions.jsx
+    Backend: GET /api/transactions (filtered by group)
+
+12. Agent Support (/admin/agent)
+    Frontend: GroupAdminAgent.jsx
+    Backend:
+      - GET /api/agent/chat (chat with agent)
+      - POST /api/support/tickets (create support ticket)
+    Models: SupportTicket, ChatMessage
+
+13. Learn & Grow (/admin/learn-grow)
+    Frontend: GroupAdminLearnGrow.jsx
+    Backend:
+      - GET /api/learn-grow (all content)
+      - POST /api/learn-grow (create content - if Secretary role)
+    Models: LearnGrowContent
+
+14. Settings (/admin/settings)
+    Frontend: GroupAdminSettings.jsx
+    Backend:
+      - GET /api/groups/:id
+      - PUT /api/groups/:id (update group settings)
+    Models: Group
+
+================================================================================
+CASHIER FEATURES
+================================================================================
+
+1. Dashboard (/cashier)
+   Frontend: CashierDashboard.jsx
+   Backend: GET /api/cashier/dashboard
+   Returns: Contributions, loans, fines statistics
+
+2. Contributions (/cashier/contributions)
+   Frontend: CashierContributions.jsx
+   Backend:
+     - GET /api/contributions (pending contributions)
+     - PUT /api/contributions/:id/approve
+     - PUT /api/contributions/:id/reject
+   Models: Contribution
+   Notification Triggers:
+     - Approve: SMS + Email confirmation
+
+3. Loans (/cashier/loans)
+   Frontend: CashierLoans.jsx
+   Backend:
+     - GET /api/loans/requests
+     - POST /api/loans/:id/disburse
+   Models: Loan
+
+4. Fines (/cashier/fines)
+   Frontend: CashierFines.jsx
+   Backend:
+     - GET /api/fines
+     - POST /api/fines (issue fine)
+   Models: Fine
+   Notification Triggers:
+     - Issue fine: SMS notification
+
+5. Reports (/cashier/reports)
+   Frontend: CashierReports.jsx
+   Backend: GET /api/cashier/reports
+   Models: Transaction, Contribution, Loan
+
+================================================================================
+SECRETARY FEATURES
+================================================================================
+
+1. Dashboard (/secretary)
+   Frontend: SecretaryDashboard.jsx
+   Backend: GET /api/secretary/dashboard
+
+2. Members (/secretary/members)
+   Frontend: SecretaryMembers.jsx
+   Backend:
+     - GET /api/groups/:id (includes members)
+     - PUT /api/members/:id (update member info)
+
+3. Meetings (/secretary/meetings)
+   Frontend: SecretaryMeetings.jsx
+   Backend:
+     - GET /api/meetings
+     - POST /api/meetings
+     - PUT /api/meetings/:id (update minutes)
+   Models: Meeting
+
+4. Communications (/secretary/communications)
+   Frontend: SecretaryCommunications.jsx
+   Backend:
+     - GET /api/announcements
+     - POST /api/announcements
+   Models: Announcement
+
+5. Learn & Grow Management
+   Frontend: (via System Admin Learn & Grow)
+   Backend:
+     - GET /api/learn-grow
+     - POST /api/learn-grow
+     - PUT /api/learn-grow/:id
+     - DELETE /api/learn-grow/:id
+   Models: LearnGrowContent
+   Notification Triggers:
+     - New content: Email to all members
+
+================================================================================
+AGENT FEATURES
+================================================================================
+
+1. Dashboard (/agent)
+   Frontend: AgentDashboard.jsx
+   Backend: GET /api/agent/dashboard
+   Returns: Groups, members, compliance stats
+
+2. Groups (/agent/groups)
+   Frontend: AgentGroups.jsx
+   Backend:
+     - GET /api/groups (agent's groups)
+     - POST /api/groups (register new group)
+   Models: Group
+   Notification Triggers:
+     - Register group: SMS + Email to group admin
+
+3. Members (/agent/members)
+   Frontend: AgentMembers.jsx
+   Backend:
+     - GET /api/members (by group)
+     - POST /api/members (add member)
+
+4. Roles (/agent/roles)
+   Frontend: AgentRoles.jsx
+   Backend:
+     - PUT /api/members/:id/role (assign role)
+   Models: User
+
+================================================================================
+SYSTEM ADMIN FEATURES
+================================================================================
+
+1. Dashboard (/system-admin)
+   Frontend: SystemAdminDashboard.jsx
+   Backend: GET /api/system-admin/dashboard
+   Returns: System-wide statistics
+
+2. Users (/system-admin/users)
+   Frontend: SystemAdminUsers.jsx
+   Backend:
+     - GET /api/users
+     - POST /api/users
+     - PUT /api/users/:id
+     - DELETE /api/users/:id
+   Models: User
+
+3. Branches (/system-admin/branches)
+   Frontend: SystemAdminBranches.jsx
+   Backend:
+     - GET /api/branches
+     - POST /api/branches
+     - PUT /api/branches/:id
+   Models: Branch
+
+4. Agents (/system-admin/agents)
+   Frontend: SystemAdminAgents.jsx
+   Backend:
+     - GET /api/users?role=Agent
+     - POST /api/users (create agent)
+   Models: User
+
+5. Clients (/system-admin/clients)
+   Frontend: SystemAdminClients.jsx
+   Backend:
+     - GET /api/users?role=Member
+   Models: User
+
+6. Loans (/system-admin/loans)
+   Frontend: SystemAdminLoans.jsx
+   Backend:
+     - GET /api/loans/requests (all loans system-wide)
+   Models: Loan
+
+7. Transactions (/system-admin/transactions)
+   Frontend: SystemAdminTransactions.jsx
+   Backend:
+     - GET /api/transactions (all transactions)
+   Models: Transaction
+
+8. System Config (/system-admin/system)
+   Frontend: SystemAdminSystem.jsx
+   Backend:
+     - GET /api/system/config
+     - PUT /api/system/config
+   Models: SystemConfig (if implemented)
+
+9. Audit (/system-admin/audit)
+   Frontend: SystemAdminAudit.jsx
+   Backend:
+     - GET /api/audit/logs
+   Models: AuditLog
+
+10. Reports (/system-admin/reports)
+    Frontend: SystemAdminReports.jsx
+    Backend:
+      - GET /api/reports
+    Models: Various (aggregated data)
+
+11. Communications (/system-admin/communications)
+    Frontend: SystemAdminCommunications.jsx
+    Backend:
+      - GET /api/announcements (all groups)
+      - POST /api/announcements (system-wide)
+
+12. Support (/system-admin/support)
+    Frontend: SystemAdminSupport.jsx
+    Backend:
+      - GET /api/support/tickets
+      - PUT /api/support/tickets/:id/resolve
+
+13. Learn & Grow (/system-admin/learn-grow)
+    Frontend: SystemAdminLearnGrow.jsx
+    Backend:
+      - GET /api/learn-grow (all content)
+      - POST /api/learn-grow
+      - PUT /api/learn-grow/:id
+      - DELETE /api/learn-grow/:id
+    Models: LearnGrowContent
+
+================================================================================
+SHARED FEATURES
+================================================================================
+
+1. Group Chat (/chat)
+   Frontend: ChatPage.jsx
+   Backend:
+     - GET /api/chat/:groupId (get messages)
+     - POST /api/chat/:groupId (send message)
+   Models: ChatMessage
+
+2. Analytics (/analytics)
+   Frontend: AnalyticsPage.jsx
+   Backend:
+     - GET /api/analytics (role-based analytics)
+   Models: Various (aggregated)
+
+3. Notifications
+   Frontend: NotificationDropdown.jsx
+   Backend:
+     - GET /api/notifications
+     - PUT /api/notifications/:id/read
+   Models: Notification
+
+================================================================================
+DATABASE RELATIONSHIPS
+================================================================================
+
+User (Members, Admins, Agents, etc.)
+  ├── belongsTo Group (if member)
+  ├── belongsTo Branch
+  ├── hasMany Loans
+  ├── hasMany Contributions
+  ├── hasMany Transactions
+  ├── hasMany Fines
+  └── hasMany Notifications
+
+Group (Saving Groups/Ibimina)
+  ├── belongsTo Branch
+  ├── belongsTo Agent (agentId)
+  ├── hasMany Users (members)
+  ├── hasMany Loans
+  ├── hasMany Contributions
+  ├── hasMany Fines
+  ├── hasMany Announcements
+  ├── hasMany Meetings
+  ├── hasMany Votes
+  └── hasMany ChatMessages
+
+Loan
+  ├── belongsTo User (member)
+  ├── belongsTo Group
+  └── creates Transaction on approval
+
+Contribution
+  ├── belongsTo User (member)
+  ├── belongsTo Group
+  └── creates Transaction on approval
+
+Transaction
+  └── belongsTo User
+
+Fine
+  ├── belongsTo User (member)
+  ├── belongsTo Group
+  └── creates Transaction on payment
+
+================================================================================
+NOTIFICATION MATRIX
+================================================================================
+
+Action                          | SMS (Twilio) | Email (Bird) | In-App
+--------------------------------|--------------|--------------|---------
+User Registration               | ✓            | ✓            | ✓
+OTP Code                        | ✓            |              |
+Loan Request Submitted          |              |              | ✓
+Loan Approved                   | ✓            | ✓            | ✓
+Loan Rejected                   | ✓            | ✓            | ✓
+Contribution Submitted          |              |              | ✓
+Contribution Approved           | ✓            | ✓            | ✓
+Contribution Rejected           |              |              | ✓
+Fine Issued                     | ✓            |              | ✓
+Fine Paid                       |              |              | ✓
+Meeting Scheduled               | ✓            |              | ✓
+Announcement Sent               |              |              | ✓
+Vote Created                    |              |              | ✓
+Learn & Grow Content Published  |              | ✓            | ✓
+New Member Application          |              |              | ✓
+Group Registered                | ✓            | ✓            | ✓
+
+================================================================================
+ROLE-BASED ACCESS CONTROL
+================================================================================
+
+Member:
+  - Own resources (loans, contributions, transactions, fines)
+  - Group resources (announcements, meetings, votes, chat)
+  - Read-only: Analytics, Learn & Grow
+
+Group Admin:
+  - All Member permissions
+  - Approve/reject loans, contributions, fines
+  - Manage group members
+  - Create announcements, meetings, votes
+  - Issue fines
+
+Cashier:
+  - Approve contributions
+  - Issue fines
+  - Track loan payments
+  - View transactions
+  - Generate reports
+
+Secretary:
+  - Manage member records
+  - Document meetings
+  - Create Learn & Grow content
+  - Manage communications
+
+Agent:
+  - Register groups
+  - Assign roles
+  - View group performance
+  - Generate reports
+
+System Admin:
+  - Full access to all resources
+  - Manage all users, groups, branches
+  - System configuration
+  - Audit logs
+
+================================================================================
+FILE UPLOAD FEATURES
+================================================================================
+
+Frontend: Learn & Grow content upload, Member documents, Loan documents
+Backend: POST /api/upload
+- Accepts: images, PDFs, documents, videos
+- Max size: 10MB (configurable)
+- Stores in: uploads/ directory
+- Returns: File URL for storage in database
+
+Supported file types:
+- Images: jpeg, jpg, png, gif
+- Documents: pdf, doc, docx
+- Videos: mp4, avi, mov
+
+Models using file uploads:
+- LearnGrowContent (fileUrl, thumbnailUrl)
+- Loan (documents - JSON array)
+- MemberApplication (documents - JSON array)
+- User (profileImage)
+
+================================================================================
+AI CREDIT SCORING
+================================================================================
+
+Frontend: MemberDashboard.jsx (AI Recommendations), LoanRequestModal.jsx
+Backend: Utils: creditScoreCalculator.js
+- Calculates credit score (0-1000) based on:
+  * Contribution consistency (40%)
+  * Loan payment history (30%)
+  * Savings amount (20%)
+  * Account age (10%)
+
+- Provides AI recommendation:
+  * approve/reject/review
+  * Max recommended amount
+  * Interest rate suggestion
+  * Confidence level
+
+Stored in: Loan model (aiRecommendation field)
+
+================================================================================
+COMPLETE API ENDPOINT LIST
+================================================================================
+
+Authentication:
+  POST   /api/auth/send-otp
+  POST   /api/auth/verify-otp
+  POST   /api/auth/demo-login
+  GET    /api/auth/me
+
+Members:
+  GET    /api/members/dashboard
+  PUT    /api/members/profile
+
+Groups:
+  GET    /api/groups
+  GET    /api/groups/:id
+  GET    /api/groups/:id/stats
+  POST   /api/groups
+
+Loans:
+  POST   /api/loans/request
+  GET    /api/loans/member
+  GET    /api/loans/requests
+  GET    /api/loans/:id
+  PUT    /api/loans/:id/approve
+  PUT    /api/loans/:id/reject
+  POST   /api/loans/:id/pay
+
+Contributions:
+  POST   /api/contributions
+  GET    /api/contributions/member
+  GET    /api/contributions
+  PUT    /api/contributions/:id/approve
+  PUT    /api/contributions/:id/reject
+
+Transactions:
+  GET    /api/transactions
+  GET    /api/transactions/summary
+
+Fines:
+  POST   /api/fines
+  GET    /api/fines/member
+  GET    /api/fines
+  PUT    /api/fines/:id/approve
+  PUT    /api/fines/:id/pay
+  PUT    /api/fines/:id/waive
+
+Announcements:
+  GET    /api/announcements
+  POST   /api/announcements
+  PUT    /api/announcements/:id/send
+
+Meetings:
+  GET    /api/meetings
+  POST   /api/meetings
+  PUT    /api/meetings/:id
+
+Voting:
+  GET    /api/voting
+  POST   /api/voting
+  POST   /api/voting/:id/vote
+
+Learn & Grow:
+  GET    /api/learn-grow
+  GET    /api/learn-grow/:id
+  POST   /api/learn-grow
+
+Chat:
+  GET    /api/chat/:groupId
+  POST   /api/chat/:groupId
+
+Notifications:
+  GET    /api/notifications
+  PUT    /api/notifications/:id/read
+
+Upload:
+  POST   /api/upload
+
+Analytics:
+  GET    /api/analytics
+
+Cashier:
+  GET    /api/cashier/dashboard
+
+Secretary:
+  GET    /api/secretary/dashboard
+
+Agent:
+  GET    /api/agent/dashboard
+
+System Admin:
+  GET    /api/system-admin/dashboard
+
+================================================================================
+ENVIRONMENT CONFIGURATION
+================================================================================
+
+Required Environment Variables:
+  PORT                    - Server port (default: 5000)
+  DB_HOST                 - MySQL host (default: localhost)
+  DB_PORT                 - MySQL port (default: 3306)
+  DB_USER                 - MySQL username (default: root)
+  DB_PASS                 - MySQL password (default: empty)
+  DB_NAME                 - Database name (default: umurenge_wallet)
+  JWT_SECRET              - JWT signing secret
+  CORS_ORIGIN             - Frontend URL
+  TWILIO_ACCOUNT_SID      - Twilio account SID
+  TWILIO_AUTH_TOKEN       - Twilio auth token
+  TWILIO_PHONE_NUMBER     - Twilio phone number
+  BIRD_API_KEY            - Bird.com API key
+  BIRD_SENDER_EMAIL       - Verified sender email
+  OTP_EXPIRY_MINUTES      - OTP validity (default: 10)
+  MAX_FILE_SIZE           - Max upload size in bytes (default: 10MB)
+  FILE_UPLOAD_PATH        - Upload directory (default: uploads/)
+
+================================================================================
+TESTING CHECKLIST
+================================================================================
+
+✓ User registration → SMS + Email notification
+✓ OTP verification → Login successful
+✓ Loan request → Pending status created
+✓ Loan approval → SMS + Email to member
+✓ Contribution approval → SMS + Email confirmation
+✓ Fine issued → SMS notification
+✓ File upload → File stored and URL returned
+✓ Credit score calculation → Score updated in User model
+✓ Transaction logging → All financial actions logged
+✓ Audit trail → All admin actions logged
+
+================================================================================
+PRODUCTION NOTES
+================================================================================
+
+1. Update JWT_SECRET with strong random string
+2. Set NODE_ENV=production
+3. Use strong database password
+4. Configure CORS_ORIGIN to production frontend URL
+5. Set up proper file storage (S3, Cloudinary, etc.)
+6. Enable HTTPS
+7. Set up database backups
+8. Configure rate limiting appropriately
+9. Set up monitoring and logging
+10. Test all notification services with real credentials
+
+================================================================================
+END OF DOCUMENT
+================================================================================
+
